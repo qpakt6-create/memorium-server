@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>memorium — admin panel</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #09090f;
+      --bg2: #0f1018;
+      --bg3: #16182a;
+      --border: rgba(255,255,255,0.08);
+      --accent: #8B5CF6;
+      --accent-dark: #7C3AED;
+      --text: #e4e6f0;
+      --muted: #7b7f9a;
+      --danger: #ef4444;
+      --success: #22c55e;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .logo {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    .auth-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type=text], input[type=password], textarea, select {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+    }
+
+    button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8px 18px;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    button:hover { background: var(--accent-dark); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.danger { background: var(--danger); }
+    button.danger:hover { background: #b91c1c; }
+    button.ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    button.ghost:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
+
+    main {
+      flex: 1;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+    }
+
+    .card h2 {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .field input, .field textarea, .field select { width: 100%; }
+    .field textarea { resize: vertical; min-height: 70px; }
+
+    .form-actions { display: flex; gap: 10px; margin-top: 16px; }
+
+    .clients-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .client-item {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .client-item:hover { border-color: rgba(139,92,246,0.3); }
+
+    .client-info { flex: 1; min-width: 0; }
+    .client-name { font-weight: 700; font-size: 14px; }
+    .client-meta { font-size: 12px; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+      background: rgba(139,92,246,0.2);
+      color: var(--accent);
+      margin-left: 8px;
+    }
+
+    .client-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+    .status-bar {
+      font-size: 12px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      margin-top: 12px;
+    }
+    .status-bar.ok { background: rgba(34,197,94,0.12); color: var(--success); }
+    .status-bar.err { background: rgba(239,68,68,0.12); color: var(--danger); }
+    .status-bar.info { background: rgba(139,92,246,0.1); color: var(--accent); }
+
+    .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 0; }
+
+    .url-display {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--accent);
+      word-break: break-all;
+      cursor: pointer;
+      user-select: all;
+    }
+    .url-display:hover { border-color: var(--accent); }
+
+    #edit-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    #edit-modal.open { display: flex; }
+    .modal-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 540px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-box h3 { font-size: 16px; font-weight: 800; margin-bottom: 18px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">memorium admin</div>
+  <div class="auth-row">
+    <input type="text" id="server-url" placeholder="https://your-server.railway.app" style="width:280px" />
+    <input type="password" id="admin-key" placeholder="Admin key" style="width:140px" />
+    <button onclick="connect()">Подключить</button>
+  </div>
+</header>
+
+<main>
+  <div class="card" id="status-card" style="display:none">
+    <h2>Публичный URL для лаунчера</h2>
+    <div class="url-display" id="public-url" onclick="copyUrl(this)">—</div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px">Нажми чтобы скопировать — вставь в настройки лаунчера (clientsJsonUrl)</p>
+  </div>
+
+  <div class="card">
+    <h2>Добавить клиент</h2>
+    <div class="form-grid">
+      <div class="field"><label>Название *</label><input type="text" id="f-name" placeholder="memorium 1.21.4" /></div>
+      <div class="field"><label>Тип</label><input type="text" id="f-type" placeholder="Fabric" /></div>
+      <div class="field"><label>Заголовок (title)</label><input type="text" id="f-title" placeholder="MEMORIUM" /></div>
+      <div class="field"><label>Статус</label><input type="text" id="f-status" placeholder="Стабильная" /></div>
+      <div class="field"><label>Папка установки</label><input type="text" id="f-folder" placeholder="memorium_1.21.4" /></div>
+      <div class="field"><label>Путь к .exe / .jar</label><input type="text" id="f-exe" placeholder="launcher.jar" /></div>
+      <div class="field full"><label>URL скачивания * (.zip)</label><input type="text" id="f-url" placeholder="https://github.com/you/repo/releases/download/v1/client.zip" /></div>
+      <div class="field full"><label>Описание</label><textarea id="f-desc" placeholder="Описание сборки..."></textarea></div>
+    </div>
+    <div class="form-actions">
+      <button onclick="addClient()">Добавить</button>
+      <button class="ghost" onclick="clearForm()">Очистить</button>
+    </div>
+    <div id="add-status"></div>
+  </div>
+
+  <div class="card">
+    <h2>Клиенты (<span id="count">0</span>)</h2>
+    <div class="clients-list" id="clients-list">
+      <div class="empty">Подключитесь к серверу</div>
+    </div>
+    <div id="list-status"></div>
+  </div>
+</main>
+
+<div id="edit-modal">
+  <div class="modal-box">
+    <h3>Редактировать клиент</h3>
+    <div class="form-grid">
+      <input type="hidden" id="e-id" />
+      <div class="field"><label>Название</label><input type="text" id="e-name" /></div>
+      <div class="field"><label>Тип</label><input type="text" id="e-type" /></div>
+      <div class="field"><label>Заголовок</label><input type="text" id="e-title" /></div>
+      <div class="field"><label>Статус</label><input type="text" id="e-status" /></div>
+      <div class="field"><label>Папка</label><input type="text" id="e-folder" /></div>
+      <div class="field"><label>exePath</label><input type="text" id="e-exe" /></div>
+      <div class="field full"><label>URL скачивания</label><input type="text" id="e-url" /></div>
+      <div class="field full"><label>Описание</label><textarea id="e-desc"></textarea></div>
+    </div>
+    <div class="form-actions">
+      <button onclick="saveEdit()">Сохранить</button>
+      <button class="ghost" onclick="closeModal()">Отмена</button>
+    </div>
+    <div id="edit-status"></div>
+  </div>
+</div>
+
+<script>
+  let BASE_URL = "";
+  let KEY = "";
+
+  function getBase() { return localStorage.getItem("mem_url") || ""; }
+  function getKey() { return localStorage.getItem("mem_key") || ""; }
+
+  window.onload = () => {
+    const savedUrl = localStorage.getItem("mem_url");
+    const savedKey = localStorage.getItem("mem_key");
+    if (savedUrl) document.getElementById("server-url").value = savedUrl;
+    if (savedKey) document.getElementById("admin-key").value = savedKey;
+    if (savedUrl && savedKey) connect();
+  };
+
+  async function connect() {
+    BASE_URL = document.getElementById("server-url").value.trim().replace(/\/$/, "");
+    KEY = document.getElementById("admin-key").value.trim();
+    if (!BASE_URL || !KEY) { alert("Введи URL и ключ"); return; }
+    localStorage.setItem("mem_url", BASE_URL);
+    localStorage.setItem("mem_key", KEY);
+
+    const urlEl = document.getElementById("public-url");
+    urlEl.textContent = BASE_URL + "/clients.json";
+    document.getElementById("status-card").style.display = "block";
+
+    await loadClients();
+  }
+
+  async function loadClients() {
+    try {
+      const r = await fetch(BASE_URL + "/admin/clients", { headers: { "x-admin-key": KEY } });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const data = await r.json();
+      renderClients(data);
+    } catch (e) {
+      showStatus("list-status", "Ошибка: " + e.message, "err");
+    }
+  }
+
+  function renderClients(clients) {
+    const el = document.getElementById("clients-list");
+    document.getElementById("count").textContent = clients.length;
+    if (!clients.length) {
+      el.innerHTML = '<div class="empty">Нет клиентов</div>';
+      return;
+    }
+    el.innerHTML = clients.map(c => `
+      <div class="client-item">
+        <div class="client-info">
+          <div class="client-name">${esc(c.name)}<span class="badge">${esc(c.type || "")}</span></div>
+          <div class="client-meta">${esc(c.downloadUrl)}</div>
+          <div class="client-meta" style="margin-top:2px">${esc(c.status || "")} · папка: ${esc(c.folder || "")}</div>
+        </div>
+        <div class="client-actions">
+          <button class="ghost" onclick="openEdit(${c.id})">✏️</button>
+          <button class="danger" onclick="deleteClient(${c.id})">🗑️</button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  async function addClient() {
+    const name = v("f-name"), url = v("f-url");
+    if (!name || !url) { showStatus("add-status", "Название и URL обязательны", "err"); return; }
+    const body = {
+      name, type: v("f-type") || "Fabric", title: v("f-title") || name,
+      status: v("f-status") || "Стабильная", folder: v("f-folder") || name.replace(/\s+/g,"_"),
+      exePath: v("f-exe") || "launcher.jar", downloadUrl: url, description: v("f-desc")
+    };
+    try {
+      const r = await fetch(BASE_URL + "/admin/clients", {
+        method: "POST", headers: { "x-admin-key": KEY, "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      showStatus("add-status", "Клиент добавлен!", "ok");
+      clearForm();
+      await loadClients();
+    } catch (e) {
+      showStatus("add-status", "Ошибка: " + e.message, "err");
+    }
+  }
+
+  let editId = null;
+  const clientsCache = {};
+
+  async function openEdit(id) {
+    const r = await fetch(BASE_URL + "/admin/clients", { headers: { "x-admin-key": KEY } });
+    const clients = await r.json();
+    const c = clients.find(x => x.id === id);
+    if (!c) return;
+    sv("e-id", c.id); sv("e-name", c.name); sv("e-type", c.type || "");
+    sv("e-title", c.title || ""); sv("e-status", c.status || "");
+    sv("e-folder", c.folder || ""); sv("e-exe", c.exePath || "");
+    sv("e-url", c.downloadUrl); sv("e-desc", c.description || "");
+    document.getElementById("edit-status").innerHTML = "";
+    document.getElementById("edit-modal").classList.add("open");
+  }
+
+  function closeModal() { document.getElementById("edit-modal").classList.remove("open"); }
+
+  async function saveEdit() {
+    const id = Number(v("e-id"));
+    const body = {
+      name: v("e-name"), type: v("e-type"), title: v("e-title"),
+      status: v("e-status"), folder: v("e-folder"), exePath: v("e-exe"),
+      downloadUrl: v("e-url"), description: v("e-desc")
+    };
+    try {
+      const r = await fetch(BASE_URL + "/admin/clients/" + id, {
+        method: "PUT", headers: { "x-admin-key": KEY, "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      showStatus("edit-status", "Сохранено!", "ok");
+      await loadClients();
+      setTimeout(closeModal, 700);
+    } catch (e) {
+      showStatus("edit-status", "Ошибка: " + e.message, "err");
+    }
+  }
+
+  async function deleteClient(id) {
+    if (!confirm("Удалить клиент #" + id + "?")) return;
+    try {
+      const r = await fetch(BASE_URL + "/admin/clients/" + id, {
+        method: "DELETE", headers: { "x-admin-key": KEY }
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      await loadClients();
+    } catch (e) {
+      showStatus("list-status", "Ошибка: " + e.message, "err");
+    }
+  }
+
+  function copyUrl(el) {
+    navigator.clipboard.writeText(el.textContent).then(() => {
+      const orig = el.textContent;
+      el.textContent = "✓ Скопировано!";
+      setTimeout(() => el.textContent = orig, 1500);
+    });
+  }
+
+  function clearForm() {
+    ["f-name","f-type","f-title","f-status","f-folder","f-exe","f-url","f-desc"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+    document.getElementById("add-status").innerHTML = "";
+  }
+
+  function showStatus(id, msg, type) {
+    document.getElementById(id).innerHTML = `<div class="status-bar ${type}">${esc(msg)}</div>`;
+  }
+
+  function v(id) { return (document.getElementById(id)?.value || "").trim(); }
+  function sv(id, val) { const el = document.getElementById(id); if (el) el.value = val ?? ""; }
+  function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  document.getElementById("edit-modal").addEventListener("click", e => {
+    if (e.target === document.getElementById("edit-modal")) closeModal();
+  });
+</script>
+</body>
+</html>

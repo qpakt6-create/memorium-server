@@ -1,0 +1,13 @@
+[
+  {
+    "id": 1,
+    "name": "memorium 1.21.4",
+    "type": "Fabric",
+    "status": "Стабильная",
+    "title": "MEMORIUM",
+    "description": "Основная сборка memorium. Fabric 1.21.4 с визуальными модами.",
+    "folder": "memorium_1.21.4",
+    "downloadUrl": "https://example.com/memorium-1.21.4.zip",
+    "exePath": "launcher.jar"
+  }
+]
