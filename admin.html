@@ -3,264 +3,337 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>memorium — admin panel</title>
+  <title>memorium — admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg: #09090f;
-      --bg2: #0f1018;
-      --bg3: #16182a;
-      --border: rgba(255,255,255,0.08);
-      --accent: #8B5CF6;
-      --accent-dark: #7C3AED;
-      --text: #e4e6f0;
-      --muted: #7b7f9a;
-      --danger: #ef4444;
-      --success: #22c55e;
+      --bg: #06060d; --bg2: #0c0c18; --bg3: #111122; --bg4: #181830;
+      --border: rgba(120,100,255,0.12); --border2: rgba(120,100,255,0.22);
+      --accent: #7b5fff; --accent2: #a78bfa;
+      --text: #e8e6f4; --muted: #6b6885; --muted2: #9491b0;
+      --danger: #f43f5e; --success: #10b981; --warn: #f59e0b;
     }
+    html, body { height: 100%; }
+    body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; overflow-x: hidden; }
+    body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(123,95,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(123,95,255,0.04) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+    .orb { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; }
+    .orb1 { width:600px;height:600px;top:-200px;left:-200px;background:radial-gradient(circle,rgba(123,95,255,0.12) 0%,transparent 70%); }
+    .orb2 { width:400px;height:400px;bottom:-100px;right:-100px;background:radial-gradient(circle,rgba(167,139,250,0.08) 0%,transparent 70%); }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+    /* LOGIN */
+    #login-screen { position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:var(--bg); }
+    .login-box { position:relative;width:100%;max-width:400px;padding:48px 40px;animation:loginIn .5s cubic-bezier(.16,1,.3,1) both; }
+    @keyframes loginIn { from{opacity:0;transform:translateY(24px) scale(.97)} to{opacity:1;transform:none} }
+    .login-box::before { content:'';position:absolute;inset:0;border-radius:20px;background:var(--bg2);border:1px solid var(--border2);box-shadow:0 0 80px rgba(123,95,255,.1),inset 0 1px 0 rgba(255,255,255,.04); }
+    .login-box > * { position:relative; }
+    .login-logo { font-size:11px;font-family:'Space Mono',monospace;letter-spacing:.25em;color:var(--accent);text-transform:uppercase;margin-bottom:10px; }
+    .login-title { font-size:28px;font-weight:800;margin-bottom:6px;line-height:1.2; }
+    .login-sub { font-size:13px;color:var(--muted2);margin-bottom:36px; }
+    .login-field { display:flex;flex-direction:column;gap:6px;margin-bottom:16px; }
+    .login-field label { font-size:11px;font-family:'Space Mono',monospace;letter-spacing:.1em;color:var(--muted2);text-transform:uppercase; }
+    .login-field input { width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:'Space Mono',monospace;padding:12px 16px;outline:none;transition:border-color .2s,box-shadow .2s; }
+    .login-field input:focus { border-color:var(--accent);box-shadow:0 0 0 3px rgba(123,95,255,.15); }
+    .login-err { font-size:12px;color:var(--danger);font-family:'Space Mono',monospace;min-height:18px;margin-bottom:8px;display:none; }
+    .login-err.show { display:block;animation:shake .3s; }
+    @keyframes shake { 0%,100%{transform:none} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+    .login-btn { width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-family:'Syne',sans-serif;font-weight:700;padding:14px;cursor:pointer;letter-spacing:.05em;transition:background .2s,transform .1s,box-shadow .2s;margin-top:8px;box-shadow:0 4px 24px rgba(123,95,255,.3); }
+    .login-btn:hover { background:#6a4fff;box-shadow:0 4px 32px rgba(123,95,255,.5); }
+    .login-btn:active { transform:scale(.98); }
+
+    /* APP */
+    #app { display:none;flex-direction:column;min-height:100vh;position:relative;z-index:1; }
+    #app.visible { display:flex;animation:fadeIn .4s ease both; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+    header { position:sticky;top:0;z-index:50;background:rgba(6,6,13,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px; }
+    .logo { font-size:13px;font-family:'Space Mono',monospace;font-weight:700;letter-spacing:.2em;color:var(--accent2);text-transform:uppercase; }
+    .logo-dot { width:6px;height:6px;border-radius:50%;background:var(--success);box-shadow:0 0 8px var(--success);display:inline-block;margin-left:10px;animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(.8)} }
+    .server-badge { font-size:11px;font-family:'Space Mono',monospace;color:var(--muted2);background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 10px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+    .btn-logout { background:transparent;border:1px solid var(--border2);color:var(--muted2);border-radius:8px;font-size:12px;font-family:'Space Mono',monospace;padding:7px 14px;cursor:pointer;transition:all .2s; }
+    .btn-logout:hover { border-color:var(--danger);color:var(--danger); }
+
+    main { flex:1;max-width:960px;width:100%;margin:0 auto;padding:40px 24px 60px;display:flex;flex-direction:column;gap:24px; }
+
+    .section-head { display:flex;align-items:center;gap:12px;margin-bottom:20px; }
+    .section-head h2 { font-size:11px;font-family:'Space Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--muted2);white-space:nowrap; }
+    .section-line { flex:1;height:1px;background:var(--border); }
+
+    .card { background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;position:relative;overflow:hidden;transition:border-color .2s; }
+    .card:hover { border-color:var(--border2); }
+    .card::before { content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(123,95,255,.3),transparent); }
+
+    /* URL */
+    .url-card { display:flex;align-items:center;gap:16px;flex-wrap:wrap; }
+    .url-val { flex:1;font-family:'Space Mono',monospace;font-size:12px;color:var(--accent2);background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 16px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;transition:border-color .2s;user-select:all; }
+    .url-val:hover { border-color:var(--accent); }
+    .copy-btn { background:var(--bg4);border:1px solid var(--border2);color:var(--accent2);border-radius:8px;font-size:12px;font-family:'Space Mono',monospace;padding:10px 16px;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0; }
+    .copy-btn:hover { background:var(--accent);color:#fff;border-color:var(--accent); }
+
+    /* TABS */
+    .tabs { display:flex;gap:4px;margin-bottom:24px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:4px; }
+    .tab { flex:1;text-align:center;padding:9px 16px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted2);transition:all .2s;font-family:'Syne',sans-serif; }
+    .tab.active { background:var(--accent);color:#fff;box-shadow:0 4px 16px rgba(123,95,255,.3); }
+    .tab:hover:not(.active) { color:var(--text);background:var(--bg4); }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+
+    /* UPLOAD ZONE */
+    .upload-zone { border:2px dashed var(--border2);border-radius:14px;padding:48px 24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg3);position:relative; }
+    .upload-zone:hover, .upload-zone.dragover { border-color:var(--accent);background:rgba(123,95,255,.06);box-shadow:0 0 0 4px rgba(123,95,255,.08); }
+    .upload-zone input[type=file] { position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%; }
+    .upload-icon { font-size:40px;margin-bottom:12px;display:block;pointer-events:none; }
+    .upload-title { font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;pointer-events:none; }
+    .upload-sub { font-size:12px;color:var(--muted2);font-family:'Space Mono',monospace;pointer-events:none; }
+    .upload-file-name { margin-top:16px;font-size:13px;font-family:'Space Mono',monospace;color:var(--accent2);background:rgba(123,95,255,.1);border:1px solid var(--border2);border-radius:8px;padding:8px 14px;display:none; }
+    .upload-file-name.show { display:block; }
+    .progress-wrap { margin-top:16px;display:none; }
+    .progress-wrap.show { display:block; }
+    .progress-bar-bg { height:4px;border-radius:2px;background:var(--bg4);overflow:hidden; }
+    .progress-bar-fill { height:100%;border-radius:2px;background:var(--accent);width:0%;transition:width .1s;box-shadow:0 0 8px var(--accent); }
+    .progress-text { font-size:11px;font-family:'Space Mono',monospace;color:var(--muted2);margin-top:6px;text-align:center; }
+
+    /* FORM */
+    .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+    .form-grid .full { grid-column:1/-1; }
+    .field { display:flex;flex-direction:column;gap:7px; }
+    .field label { font-size:10px;font-family:'Space Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2); }
+    input[type=text], input[type=password], textarea, select { background:var(--bg3);border:1px solid rgba(120,100,255,.15);border-radius:10px;color:var(--text);font-size:13px;font-family:'Syne',sans-serif;padding:10px 14px;outline:none;transition:border-color .2s,box-shadow .2s;width:100%; }
+    input:focus, textarea:focus, select:focus { border-color:var(--accent);box-shadow:0 0 0 3px rgba(123,95,255,.12); }
+    textarea { resize:vertical;min-height:72px; }
+    input::placeholder, textarea::placeholder { color:var(--muted); }
+    .form-actions { display:flex;gap:10px;margin-top:20px; }
+
+    /* BUTTONS */
+    button { background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-family:'Syne',sans-serif;font-weight:700;padding:10px 22px;cursor:pointer;transition:background .2s,transform .1s,box-shadow .2s;letter-spacing:.03em; }
+    button:hover { background:#6a4fff;box-shadow:0 4px 20px rgba(123,95,255,.35); }
+    button:active { transform:scale(.97); }
+    button:disabled { opacity:.4;cursor:not-allowed; }
+    button.ghost { background:transparent;border:1px solid var(--border2);color:var(--muted2); }
+    button.ghost:hover { border-color:var(--accent);color:var(--accent);box-shadow:none;background:rgba(123,95,255,.06); }
+    button.danger { background:rgba(244,63,94,.12);color:var(--danger);border:1px solid rgba(244,63,94,.2); }
+    button.danger:hover { background:var(--danger);color:#fff;box-shadow:0 4px 16px rgba(244,63,94,.35);border-color:transparent; }
+
+    .status-bar { font-size:12px;font-family:'Space Mono',monospace;padding:9px 14px;border-radius:8px;margin-top:14px;display:none; }
+    .status-bar.show { display:block;animation:slideIn .2s ease; }
+    .status-bar.ok { background:rgba(16,185,129,.1);color:var(--success);border:1px solid rgba(16,185,129,.2); }
+    .status-bar.err { background:rgba(244,63,94,.1);color:var(--danger);border:1px solid rgba(244,63,94,.2); }
+    .status-bar.info { background:rgba(123,95,255,.1);color:var(--accent2);border:1px solid var(--border); }
+    @keyframes slideIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+
+    /* CLIENTS */
+    .clients-list { display:flex;flex-direction:column;gap:10px; }
+    .client-item { background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;transition:border-color .2s,background .2s;animation:itemIn .3s ease both; }
+    @keyframes itemIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+    .client-item:hover { border-color:var(--border2);background:var(--bg4); }
+    .client-info { flex:1;min-width:0; }
+    .client-name { font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
+    .badge { font-size:9px;font-family:'Space Mono',monospace;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.08em;text-transform:uppercase; }
+    .badge.fabric { background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.2); }
+    .badge.forge { background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.2); }
+    .badge.vanilla { background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.2); }
+    .badge.def { background:rgba(123,95,255,.15);color:var(--accent2);border:1px solid rgba(123,95,255,.2); }
+    .badge-status { font-size:9px;font-family:'Space Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(16,185,129,.1);color:var(--success);border:1px solid rgba(16,185,129,.15); }
+    .badge-hosted { font-size:9px;font-family:'Space Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(245,158,11,.1);color:var(--warn);border:1px solid rgba(245,158,11,.15); }
+    .client-url { font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+    .client-meta { font-size:11px;color:var(--muted);margin-top:3px; }
+    .client-actions { display:flex;gap:8px;flex-shrink:0; }
+    .icon-btn { width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;padding:0; }
+    .empty { color:var(--muted);font-size:13px;font-family:'Space Mono',monospace;text-align:center;padding:32px 0; }
+    .clients-header { display:flex;align-items:center;gap:12px;margin-bottom:16px; }
+    .client-count { font-size:11px;font-family:'Space Mono',monospace;color:var(--muted2);background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 12px;white-space:nowrap; }
+
+    /* MODAL */
+    #edit-modal { display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px); }
+    #edit-modal.open { display:flex; }
+    .modal-box { background:var(--bg2);border:1px solid var(--border2);border-radius:18px;padding:32px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 24px 80px rgba(0,0,0,.6);animation:modalIn .25s cubic-bezier(.16,1,.3,1) both; }
+    @keyframes modalIn { from{opacity:0;transform:scale(.95) translateY(10px)} to{opacity:1;transform:none} }
+    .modal-box::before { content:'';position:absolute;top:0;left:0;right:0;height:1px;border-radius:18px 18px 0 0;background:linear-gradient(90deg,transparent,rgba(123,95,255,.4),transparent); }
+    .modal-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:24px; }
+    .modal-title { font-size:16px;font-weight:700; }
+    .modal-close { width:30px;height:30px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--muted2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;padding:0;box-shadow:none; }
+    .modal-close:hover { background:rgba(244,63,94,.1);color:var(--danger);border-color:rgba(244,63,94,.2); }
+
+    /* CONFIRM */
+    #confirm-dialog { display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(4px); }
+    #confirm-dialog.open { display:flex; }
+    .confirm-box { background:var(--bg2);border:1px solid rgba(244,63,94,.25);border-radius:16px;padding:28px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:modalIn .2s cubic-bezier(.16,1,.3,1) both; }
+    .confirm-box h3 { font-size:16px;font-weight:700;margin-bottom:10px; }
+    .confirm-box p { font-size:13px;color:var(--muted2);margin-bottom:24px; }
+    .confirm-actions { display:flex;gap:10px;justify-content:flex-end; }
+
+    ::-webkit-scrollbar { width:6px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--border2);border-radius:3px; }
+    ::-webkit-scrollbar-thumb:hover { background:var(--accent); }
+
+    @media(max-width:640px) {
+      header{padding:0 16px} main{padding:24px 16px 40px}
+      .form-grid{grid-template-columns:1fr} .form-grid .full{grid-column:1}
+      .login-box{padding:36px 24px} .server-badge{display:none}
+      .tabs{flex-direction:column}
     }
-
-    header {
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border);
-      padding: 0 32px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
-    .logo {
-      font-size: 18px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      color: var(--accent);
-      text-transform: uppercase;
-    }
-
-    .auth-row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    input[type=text], input[type=password], textarea, select {
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 13px;
-      padding: 8px 12px;
-      outline: none;
-      transition: border-color 0.15s;
-    }
-    input:focus, textarea:focus, select:focus {
-      border-color: var(--accent);
-    }
-
-    button {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 700;
-      padding: 8px 18px;
-      cursor: pointer;
-      transition: background 0.15s, opacity 0.15s;
-    }
-    button:hover { background: var(--accent-dark); }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    button.danger { background: var(--danger); }
-    button.danger:hover { background: #b91c1c; }
-    button.ghost {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--muted);
-    }
-    button.ghost:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
-
-    main {
-      flex: 1;
-      max-width: 900px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 32px 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 28px;
-    }
-
-    .card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 24px;
-    }
-
-    .card h2 {
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 18px;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    .form-grid .full { grid-column: 1 / -1; }
-
-    .field { display: flex; flex-direction: column; gap: 5px; }
-    .field label { font-size: 12px; color: var(--muted); font-weight: 600; }
-    .field input, .field textarea, .field select { width: 100%; }
-    .field textarea { resize: vertical; min-height: 70px; }
-
-    .form-actions { display: flex; gap: 10px; margin-top: 16px; }
-
-    .clients-list { display: flex; flex-direction: column; gap: 10px; }
-
-    .client-item {
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-    .client-item:hover { border-color: rgba(139,92,246,0.3); }
-
-    .client-info { flex: 1; min-width: 0; }
-    .client-name { font-weight: 700; font-size: 14px; }
-    .client-meta { font-size: 12px; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    .badge {
-      display: inline-block;
-      font-size: 10px;
-      font-weight: 800;
-      padding: 2px 8px;
-      border-radius: 4px;
-      letter-spacing: 0.05em;
-      background: rgba(139,92,246,0.2);
-      color: var(--accent);
-      margin-left: 8px;
-    }
-
-    .client-actions { display: flex; gap: 8px; flex-shrink: 0; }
-
-    .status-bar {
-      font-size: 12px;
-      padding: 8px 14px;
-      border-radius: 8px;
-      margin-top: 12px;
-    }
-    .status-bar.ok { background: rgba(34,197,94,0.12); color: var(--success); }
-    .status-bar.err { background: rgba(239,68,68,0.12); color: var(--danger); }
-    .status-bar.info { background: rgba(139,92,246,0.1); color: var(--accent); }
-
-    .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 0; }
-
-    .url-display {
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-family: monospace;
-      font-size: 13px;
-      color: var(--accent);
-      word-break: break-all;
-      cursor: pointer;
-      user-select: all;
-    }
-    .url-display:hover { border-color: var(--accent); }
-
-    #edit-modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.7);
-      z-index: 100;
-      align-items: center;
-      justify-content: center;
-    }
-    #edit-modal.open { display: flex; }
-    .modal-box {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 28px;
-      width: 100%;
-      max-width: 540px;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    .modal-box h3 { font-size: 16px; font-weight: 800; margin-bottom: 18px; }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">memorium admin</div>
-  <div class="auth-row">
-    <input type="text" id="server-url" placeholder="https://your-server.railway.app" style="width:280px" />
-    <input type="password" id="admin-key" placeholder="Admin key" style="width:140px" />
-    <button onclick="connect()">Подключить</button>
-  </div>
-</header>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
 
-<main>
-  <div class="card" id="status-card" style="display:none">
-    <h2>Публичный URL для лаунчера</h2>
-    <div class="url-display" id="public-url" onclick="copyUrl(this)">—</div>
-    <p style="font-size:12px;color:var(--muted);margin-top:8px">Нажми чтобы скопировать — вставь в настройки лаунчера (clientsJsonUrl)</p>
-  </div>
-
-  <div class="card">
-    <h2>Добавить клиент</h2>
-    <div class="form-grid">
-      <div class="field"><label>Название *</label><input type="text" id="f-name" placeholder="memorium 1.21.4" /></div>
-      <div class="field"><label>Тип</label><input type="text" id="f-type" placeholder="Fabric" /></div>
-      <div class="field"><label>Заголовок (title)</label><input type="text" id="f-title" placeholder="MEMORIUM" /></div>
-      <div class="field"><label>Статус</label><input type="text" id="f-status" placeholder="Стабильная" /></div>
-      <div class="field"><label>Папка установки</label><input type="text" id="f-folder" placeholder="memorium_1.21.4" /></div>
-      <div class="field"><label>Путь к .exe / .jar</label><input type="text" id="f-exe" placeholder="launcher.jar" /></div>
-      <div class="field full"><label>URL скачивания * (.zip)</label><input type="text" id="f-url" placeholder="https://github.com/you/repo/releases/download/v1/client.zip" /></div>
-      <div class="field full"><label>Описание</label><textarea id="f-desc" placeholder="Описание сборки..."></textarea></div>
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">memorium // system</div>
+    <div class="login-title">Вход в панель</div>
+    <div class="login-sub">Доступ только для администраторов</div>
+    <div class="login-field">
+      <label>Логин</label>
+      <input type="text" id="l-login" placeholder="username" autocomplete="username" />
     </div>
-    <div class="form-actions">
-      <button onclick="addClient()">Добавить</button>
-      <button class="ghost" onclick="clearForm()">Очистить</button>
+    <div class="login-field">
+      <label>Пароль</label>
+      <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password" />
     </div>
-    <div id="add-status"></div>
+    <div class="login-err" id="login-err">Неверный логин или пароль</div>
+    <button class="login-btn" onclick="doLogin()">Войти</button>
   </div>
+</div>
 
-  <div class="card">
-    <h2>Клиенты (<span id="count">0</span>)</h2>
-    <div class="clients-list" id="clients-list">
-      <div class="empty">Подключитесь к серверу</div>
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="logo">memorium admin <span class="logo-dot"></span></div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="server-badge" id="server-badge">не подключено</div>
+      <button class="btn-logout" onclick="doLogout()">Выйти</button>
     </div>
-    <div id="list-status"></div>
-  </div>
-</main>
+  </header>
 
+  <main>
+
+    <!-- Подключение -->
+    <div class="card" id="connect-card">
+      <div class="section-head"><h2>Подключение к серверу</h2><div class="section-line"></div></div>
+      <div class="form-grid">
+        <div class="field full"><label>URL Railway сервера</label><input type="text" id="server-url" placeholder="https://memorium-server-xxxx.railway.app" /></div>
+        <div class="field full"><label>Admin Key</label><input type="password" id="admin-key" placeholder="mySecret123" /></div>
+      </div>
+      <div class="form-actions"><button onclick="connect()">Подключить</button></div>
+      <div class="status-bar" id="connect-status"></div>
+    </div>
+
+    <!-- Публичный URL -->
+    <div class="card" id="status-card" style="display:none">
+      <div class="section-head"><h2>Публичный URL для лаунчера</h2><div class="section-line"></div></div>
+      <div class="url-card">
+        <div class="url-val" id="public-url" onclick="copyUrl(this)">—</div>
+        <button class="copy-btn" onclick="copyUrl(document.getElementById('public-url'))">Скопировать</button>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:10px;font-family:'Space Mono',monospace">→ вставь в настройки лаунчера как clientsJsonUrl</p>
+    </div>
+
+    <!-- Управление -->
+    <div class="card" id="manage-card" style="display:none">
+      <div class="section-head"><h2>Управление сборками</h2><div class="section-line"></div></div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('upload')">⬆ Загрузить ZIP</button>
+        <button class="tab" onclick="switchTab('manual')">✏️ Вручную (по URL)</button>
+      </div>
+
+      <!-- TAB UPLOAD -->
+      <div class="tab-content active" id="tab-upload">
+        <div class="form-grid" style="margin-bottom:20px">
+          <div class="field full">
+            <label>Действие</label>
+            <select id="upload-mode" onchange="onUploadModeChange()">
+              <option value="new">Добавить новую сборку</option>
+              <option value="update">Обновить файл существующей</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="update-select-wrap" style="display:none;margin-bottom:20px">
+          <div class="field">
+            <label>Выбери сборку</label>
+            <select id="update-client-id"><option value="">— сначала подключись —</option></select>
+          </div>
+          <p style="font-size:11px;color:var(--muted2);margin-top:8px;font-family:'Space Mono',monospace">Загрузи новый ZIP — downloadUrl обновится автоматически, лаунчер начнёт скачивать новый файл</p>
+        </div>
+
+        <div id="new-client-fields">
+          <div class="form-grid" style="margin-bottom:20px">
+            <div class="field"><label>Название *</label><input type="text" id="u-name" placeholder="memorium 1.21.4" /></div>
+            <div class="field"><label>Тип</label><input type="text" id="u-type" placeholder="Fabric" /></div>
+            <div class="field"><label>Статус</label><input type="text" id="u-status" placeholder="Стабильная" /></div>
+            <div class="field"><label>Папка установки</label><input type="text" id="u-folder" placeholder="memorium_1.21.4" /></div>
+            <div class="field"><label>exePath (внутри ZIP)</label><input type="text" id="u-exe" placeholder="launcher.jar" /></div>
+            <div class="field full"><label>Описание</label><textarea id="u-desc" placeholder="Описание сборки..."></textarea></div>
+          </div>
+        </div>
+
+        <div class="upload-zone" id="drop-zone">
+          <input type="file" id="file-input" accept=".zip" />
+          <span class="upload-icon">📦</span>
+          <div class="upload-title">Перетащи ZIP-архив сюда</div>
+          <div class="upload-sub">или нажми чтобы выбрать · только .zip файлы</div>
+          <div class="upload-file-name" id="file-name-display"></div>
+        </div>
+
+        <div class="progress-wrap" id="progress-wrap">
+          <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+          <div class="progress-text" id="progress-text">0%</div>
+        </div>
+
+        <div class="form-actions">
+          <button id="upload-btn" onclick="doUpload()" disabled>Загрузить на сервер</button>
+        </div>
+        <div class="status-bar" id="upload-status"></div>
+      </div>
+
+      <!-- TAB MANUAL -->
+      <div class="tab-content" id="tab-manual">
+        <div class="form-grid">
+          <div class="field"><label>Название *</label><input type="text" id="f-name" placeholder="memorium 1.21.4" /></div>
+          <div class="field"><label>Тип</label><input type="text" id="f-type" placeholder="Fabric" /></div>
+          <div class="field"><label>Заголовок</label><input type="text" id="f-title" placeholder="MEMORIUM" /></div>
+          <div class="field"><label>Статус</label><input type="text" id="f-status" placeholder="Стабильная" /></div>
+          <div class="field"><label>Папка установки</label><input type="text" id="f-folder" placeholder="memorium_1.21.4" /></div>
+          <div class="field"><label>exePath</label><input type="text" id="f-exe" placeholder="launcher.jar" /></div>
+          <div class="field full"><label>URL скачивания * (.zip)</label><input type="text" id="f-url" placeholder="https://github.com/.../client.zip" /></div>
+          <div class="field full"><label>Описание</label><textarea id="f-desc" placeholder="Описание сборки..."></textarea></div>
+        </div>
+        <div class="form-actions">
+          <button onclick="addClient()">Добавить</button>
+          <button class="ghost" onclick="clearForm()">Очистить</button>
+        </div>
+        <div class="status-bar" id="add-status"></div>
+      </div>
+    </div>
+
+    <!-- Список сборок -->
+    <div class="card" id="list-card" style="display:none">
+      <div class="clients-header">
+        <div class="section-head" style="margin-bottom:0;flex:1"><h2>Список сборок</h2><div class="section-line"></div></div>
+        <span class="client-count" id="count">0</span>
+        <button class="ghost" style="margin-left:12px;font-size:12px;padding:7px 14px" onclick="loadClients()">↻ Обновить</button>
+      </div>
+      <div class="clients-list" id="clients-list"><div class="empty">Подключитесь к серверу</div></div>
+      <div class="status-bar" id="list-status"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- EDIT MODAL -->
 <div id="edit-modal">
   <div class="modal-box">
-    <h3>Редактировать клиент</h3>
+    <div class="modal-header">
+      <div class="modal-title">Редактировать сборку</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
     <div class="form-grid">
       <input type="hidden" id="e-id" />
       <div class="field"><label>Название</label><input type="text" id="e-name" /></div>
@@ -276,173 +349,280 @@
       <button onclick="saveEdit()">Сохранить</button>
       <button class="ghost" onclick="closeModal()">Отмена</button>
     </div>
-    <div id="edit-status"></div>
+    <div class="status-bar" id="edit-status"></div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div id="confirm-dialog">
+  <div class="confirm-box">
+    <h3>Удалить сборку?</h3>
+    <p id="confirm-text">Это действие нельзя отменить.</p>
+    <div class="confirm-actions">
+      <button class="ghost" onclick="closeConfirm()">Отмена</button>
+      <button class="danger" id="confirm-ok">Удалить</button>
+    </div>
   </div>
 </div>
 
 <script>
-  let BASE_URL = "";
-  let KEY = "";
+// ─── AUTH ────────────────────────────────────────────────────────────────
+const VALID_LOGIN = 'we1zy', VALID_PASS = 'qpakt1200';
+function doLogin() {
+  const login = document.getElementById('l-login').value.trim();
+  const pass  = document.getElementById('l-pass').value;
+  const err   = document.getElementById('login-err');
+  err.classList.remove('show');
+  if (login === VALID_LOGIN && pass === VALID_PASS) {
+    sessionStorage.setItem('auth','1');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    restoreServerAuth();
+  } else { err.classList.add('show'); setTimeout(()=>err.classList.remove('show'),3000); }
+}
+function doLogout() { sessionStorage.removeItem('auth'); location.reload(); }
+document.getElementById('l-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('l-login').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('l-pass').focus(); });
+if (sessionStorage.getItem('auth')==='1') {
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').classList.add('visible');
+  restoreServerAuth();
+}
 
-  function getBase() { return localStorage.getItem("mem_url") || ""; }
-  function getKey() { return localStorage.getItem("mem_key") || ""; }
+// ─── SERVER ──────────────────────────────────────────────────────────────
+let BASE_URL='', KEY='';
+function restoreServerAuth() {
+  const u = localStorage.getItem('mem_url'), k = localStorage.getItem('mem_key');
+  if(u) document.getElementById('server-url').value = u;
+  if(k) document.getElementById('admin-key').value = k;
+  if(u && k) connect();
+}
+async function connect() {
+  BASE_URL = document.getElementById('server-url').value.trim().replace(/\/$/,'');
+  KEY = document.getElementById('admin-key').value.trim();
+  if(!BASE_URL||!KEY){showStatus('connect-status','⚠ Введи URL и ключ','err');return;}
+  showStatus('connect-status','⏳ Подключение...','info');
+  try {
+    const r = await fetch(BASE_URL+'/admin/clients',{headers:{'x-admin-key':KEY}});
+    if(r.status===401) throw new Error('Неверный Admin Key');
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data = await r.json();
+    localStorage.setItem('mem_url',BASE_URL); localStorage.setItem('mem_key',KEY);
+    document.getElementById('public-url').textContent = BASE_URL+'/clients.json';
+    document.getElementById('server-badge').textContent = BASE_URL.replace('https://','');
+    ['status-card','manage-card','list-card'].forEach(id=>document.getElementById(id).style.display='');
+    showStatus('connect-status','✓ Подключено успешно','ok');
+    renderClients(data); populateUpdateSelect(data);
+  } catch(e) { showStatus('connect-status','✕ '+e.message,'err'); }
+}
 
-  window.onload = () => {
-    const savedUrl = localStorage.getItem("mem_url");
-    const savedKey = localStorage.getItem("mem_key");
-    if (savedUrl) document.getElementById("server-url").value = savedUrl;
-    if (savedKey) document.getElementById("admin-key").value = savedKey;
-    if (savedUrl && savedKey) connect();
+// ─── TABS ─────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  ['upload','manual'].forEach((t,i) => {
+    document.querySelectorAll('.tab')[i].classList.toggle('active', t===name);
+    document.getElementById('tab-'+t).classList.toggle('active', t===name);
+  });
+}
+
+// ─── UPLOAD ───────────────────────────────────────────────────────────────
+let selectedFile = null;
+const dz = document.getElementById('drop-zone');
+const fi = document.getElementById('file-input');
+
+// Click to open file dialog
+dz.addEventListener('click', e => { if(e.target !== fi) fi.click(); });
+fi.addEventListener('change', () => { if(fi.files[0]) setFile(fi.files[0]); });
+
+// Drag-and-drop
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', e => { if(!dz.contains(e.relatedTarget)) dz.classList.remove('dragover'); });
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if(file) setFile(file);
+});
+
+function setFile(file) {
+  if(!file.name.endsWith('.zip')) { showStatus('upload-status','✕ Только .zip файлы','err'); return; }
+  selectedFile = file;
+  const d = document.getElementById('file-name-display');
+  d.textContent = `📦 ${file.name}  (${(file.size/1024/1024).toFixed(1)} MB)`;
+  d.classList.add('show');
+  document.getElementById('upload-btn').disabled = false;
+}
+
+function onUploadModeChange() {
+  const isUpdate = document.getElementById('upload-mode').value === 'update';
+  document.getElementById('update-select-wrap').style.display = isUpdate ? '' : 'none';
+  document.getElementById('new-client-fields').style.display = isUpdate ? 'none' : '';
+}
+
+function populateUpdateSelect(clients) {
+  const sel = document.getElementById('update-client-id');
+  if(!clients.length) { sel.innerHTML='<option value="">— нет сборок —</option>'; return; }
+  sel.innerHTML = clients.map(c=>`<option value="${c.id}">${esc(c.name)} (id:${c.id})</option>`).join('');
+}
+
+async function doUpload() {
+  if(!selectedFile){showStatus('upload-status','⚠ Выбери файл','err');return;}
+  const mode = document.getElementById('upload-mode').value;
+  if(mode==='new' && !v('u-name')){showStatus('upload-status','⚠ Укажи название','err');return;}
+  if(mode==='update' && !document.getElementById('update-client-id').value){showStatus('upload-status','⚠ Выбери сборку','err');return;}
+
+  const fd = new FormData();
+  fd.append('file', selectedFile);
+  if(mode==='update') {
+    fd.append('clientId', document.getElementById('update-client-id').value);
+  } else {
+    fd.append('name',   v('u-name'));
+    fd.append('type',   v('u-type')||'Fabric');
+    fd.append('status', v('u-status')||'Стабильная');
+    fd.append('folder', v('u-folder')||v('u-name').replace(/\s+/g,'_'));
+    fd.append('exePath',v('u-exe')||'launcher.jar');
+    fd.append('description', v('u-desc'));
+  }
+
+  const btn = document.getElementById('upload-btn');
+  btn.disabled = true;
+  const pw = document.getElementById('progress-wrap');
+  const pf = document.getElementById('progress-fill');
+  const pt = document.getElementById('progress-text');
+  pw.classList.add('show'); pf.style.width='0%';
+  showStatus('upload-status','⏳ Загружаю файл на сервер...','info');
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', BASE_URL+'/admin/upload');
+  xhr.setRequestHeader('x-admin-key', KEY);
+
+  xhr.upload.onprogress = e => {
+    if(e.lengthComputable) {
+      const pct = Math.round(e.loaded/e.total*100);
+      pf.style.width = pct+'%';
+      pt.textContent = `${pct}% · ${(e.loaded/1024/1024).toFixed(1)} / ${(e.total/1024/1024).toFixed(1)} MB`;
+    }
   };
 
-  async function connect() {
-    BASE_URL = document.getElementById("server-url").value.trim().replace(/\/$/, "");
-    KEY = document.getElementById("admin-key").value.trim();
-    if (!BASE_URL || !KEY) { alert("Введи URL и ключ"); return; }
-    localStorage.setItem("mem_url", BASE_URL);
-    localStorage.setItem("mem_key", KEY);
-
-    const urlEl = document.getElementById("public-url");
-    urlEl.textContent = BASE_URL + "/clients.json";
-    document.getElementById("status-card").style.display = "block";
-
-    await loadClients();
-  }
-
-  async function loadClients() {
-    try {
-      const r = await fetch(BASE_URL + "/admin/clients", { headers: { "x-admin-key": KEY } });
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      const data = await r.json();
-      renderClients(data);
-    } catch (e) {
-      showStatus("list-status", "Ошибка: " + e.message, "err");
+  xhr.onload = async () => {
+    btn.disabled = false; pw.classList.remove('show');
+    if(xhr.status===200||xhr.status===201) {
+      const data = JSON.parse(xhr.responseText);
+      const action = mode==='update' ? 'обновлена' : 'добавлена';
+      showStatus('upload-status',`✓ Сборка ${action}! Лаунчер будет скачивать: ${data.fileUrl}`,'ok');
+      selectedFile = null;
+      document.getElementById('file-name-display').classList.remove('show');
+      fi.value = '';
+      document.getElementById('upload-btn').disabled = true;
+      await loadClients();
+    } else {
+      let msg='Ошибка сервера';
+      try{ msg=JSON.parse(xhr.responseText).error||msg; }catch{}
+      showStatus('upload-status','✕ '+msg,'err');
     }
-  }
+  };
+  xhr.onerror = () => { btn.disabled=false; pw.classList.remove('show'); showStatus('upload-status','✕ Ошибка соединения','err'); };
+  xhr.send(fd);
+}
 
-  function renderClients(clients) {
-    const el = document.getElementById("clients-list");
-    document.getElementById("count").textContent = clients.length;
-    if (!clients.length) {
-      el.innerHTML = '<div class="empty">Нет клиентов</div>';
-      return;
-    }
-    el.innerHTML = clients.map(c => `
-      <div class="client-item">
-        <div class="client-info">
-          <div class="client-name">${esc(c.name)}<span class="badge">${esc(c.type || "")}</span></div>
-          <div class="client-meta">${esc(c.downloadUrl)}</div>
-          <div class="client-meta" style="margin-top:2px">${esc(c.status || "")} · папка: ${esc(c.folder || "")}</div>
+// ─── CLIENTS ──────────────────────────────────────────────────────────────
+async function loadClients() {
+  try {
+    const r = await fetch(BASE_URL+'/admin/clients',{headers:{'x-admin-key':KEY}});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data = await r.json();
+    renderClients(data); populateUpdateSelect(data);
+  } catch(e) { showStatus('list-status','✕ '+e.message,'err'); }
+}
+
+function getBadgeClass(type) {
+  const t=(type||'').toLowerCase();
+  if(t.includes('fabric')) return 'fabric';
+  if(t.includes('forge'))  return 'forge';
+  if(t.includes('vanilla'))return 'vanilla';
+  return 'def';
+}
+
+function renderClients(clients) {
+  const el = document.getElementById('clients-list');
+  document.getElementById('count').textContent = clients.length;
+  if(!clients.length){el.innerHTML='<div class="empty">// нет сборок</div>';return;}
+  el.innerHTML = clients.map((c,i)=>`
+    <div class="client-item" style="animation-delay:${i*.04}s">
+      <div class="client-info">
+        <div class="client-name">
+          ${esc(c.name)}
+          <span class="badge ${getBadgeClass(c.type)}">${esc(c.type||'')}</span>
+          <span class="badge-status">${esc(c.status||'active')}</span>
+          ${c.uploadedFile?'<span class="badge-hosted">hosted</span>':''}
         </div>
-        <div class="client-actions">
-          <button class="ghost" onclick="openEdit(${c.id})">✏️</button>
-          <button class="danger" onclick="deleteClient(${c.id})">🗑️</button>
-        </div>
+        <div class="client-url">${esc(c.downloadUrl)}</div>
+        <div class="client-meta">папка: ${esc(c.folder||'—')} · exe: ${esc(c.exePath||'—')} · id: ${c.id}</div>
       </div>
-    `).join("");
-  }
+      <div class="client-actions">
+        <button class="ghost icon-btn" onclick="openEdit(${c.id})" title="Редактировать">✏️</button>
+        <button class="danger icon-btn" onclick="confirmDelete(${c.id},'${esc(c.name)}')" title="Удалить">🗑️</button>
+      </div>
+    </div>`).join('');
+}
 
-  async function addClient() {
-    const name = v("f-name"), url = v("f-url");
-    if (!name || !url) { showStatus("add-status", "Название и URL обязательны", "err"); return; }
-    const body = {
-      name, type: v("f-type") || "Fabric", title: v("f-title") || name,
-      status: v("f-status") || "Стабильная", folder: v("f-folder") || name.replace(/\s+/g,"_"),
-      exePath: v("f-exe") || "launcher.jar", downloadUrl: url, description: v("f-desc")
-    };
-    try {
-      const r = await fetch(BASE_URL + "/admin/clients", {
-        method: "POST", headers: { "x-admin-key": KEY, "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      showStatus("add-status", "Клиент добавлен!", "ok");
-      clearForm();
-      await loadClients();
-    } catch (e) {
-      showStatus("add-status", "Ошибка: " + e.message, "err");
-    }
-  }
+// ─── MANUAL ADD ───────────────────────────────────────────────────────────
+async function addClient() {
+  const name=v('f-name'), url=v('f-url');
+  if(!name||!url){showStatus('add-status','⚠ Название и URL обязательны','err');return;}
+  const body={name,type:v('f-type')||'Fabric',title:v('f-title')||name,status:v('f-status')||'Стабильная',folder:v('f-folder')||name.replace(/\s+/g,'_'),exePath:v('f-exe')||'launcher.jar',downloadUrl:url,description:v('f-desc')};
+  try {
+    const r=await fetch(BASE_URL+'/admin/clients',{method:'POST',headers:{'x-admin-key':KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    showStatus('add-status','✓ Сборка добавлена!','ok');
+    clearForm(); await loadClients();
+  } catch(e){showStatus('add-status','✕ '+e.message,'err');}
+}
+function clearForm() {
+  ['f-name','f-type','f-title','f-status','f-folder','f-exe','f-url','f-desc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const s=document.getElementById('add-status');s.className='status-bar';s.textContent='';
+}
 
-  let editId = null;
-  const clientsCache = {};
+// ─── EDIT MODAL ───────────────────────────────────────────────────────────
+async function openEdit(id) {
+  try {
+    const r=await fetch(BASE_URL+'/admin/clients',{headers:{'x-admin-key':KEY}});
+    const clients=await r.json(); const c=clients.find(x=>x.id===id); if(!c)return;
+    sv('e-id',c.id);sv('e-name',c.name);sv('e-type',c.type||'');sv('e-title',c.title||'');
+    sv('e-status',c.status||'');sv('e-folder',c.folder||'');sv('e-exe',c.exePath||'');
+    sv('e-url',c.downloadUrl);sv('e-desc',c.description||'');
+    const s=document.getElementById('edit-status');s.className='status-bar';s.textContent='';
+    document.getElementById('edit-modal').classList.add('open');
+  } catch{}
+}
+function closeModal(){document.getElementById('edit-modal').classList.remove('open');}
+async function saveEdit() {
+  const id=Number(v('e-id'));
+  const body={name:v('e-name'),type:v('e-type'),title:v('e-title'),status:v('e-status'),folder:v('e-folder'),exePath:v('e-exe'),downloadUrl:v('e-url'),description:v('e-desc')};
+  try {
+    const r=await fetch(BASE_URL+'/admin/clients/'+id,{method:'PUT',headers:{'x-admin-key':KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    showStatus('edit-status','✓ Сохранено','ok');
+    await loadClients(); setTimeout(closeModal,700);
+  } catch(e){showStatus('edit-status','✕ '+e.message,'err');}
+}
 
-  async function openEdit(id) {
-    const r = await fetch(BASE_URL + "/admin/clients", { headers: { "x-admin-key": KEY } });
-    const clients = await r.json();
-    const c = clients.find(x => x.id === id);
-    if (!c) return;
-    sv("e-id", c.id); sv("e-name", c.name); sv("e-type", c.type || "");
-    sv("e-title", c.title || ""); sv("e-status", c.status || "");
-    sv("e-folder", c.folder || ""); sv("e-exe", c.exePath || "");
-    sv("e-url", c.downloadUrl); sv("e-desc", c.description || "");
-    document.getElementById("edit-status").innerHTML = "";
-    document.getElementById("edit-modal").classList.add("open");
-  }
+// ─── CONFIRM DELETE ───────────────────────────────────────────────────────
+let pendingDeleteId=null;
+function confirmDelete(id,name){pendingDeleteId=id;document.getElementById('confirm-text').textContent=`Удалить "${name}"? Это нельзя отменить.`;document.getElementById('confirm-dialog').classList.add('open');}
+function closeConfirm(){pendingDeleteId=null;document.getElementById('confirm-dialog').classList.remove('open');}
+document.getElementById('confirm-ok').addEventListener('click',async()=>{
+  if(!pendingDeleteId)return; const id=pendingDeleteId; closeConfirm();
+  try{const r=await fetch(BASE_URL+'/admin/clients/'+id,{method:'DELETE',headers:{'x-admin-key':KEY}});if(!r.ok)throw new Error('HTTP '+r.status);await loadClients();}
+  catch(e){showStatus('list-status','✕ '+e.message,'err');}
+});
 
-  function closeModal() { document.getElementById("edit-modal").classList.remove("open"); }
-
-  async function saveEdit() {
-    const id = Number(v("e-id"));
-    const body = {
-      name: v("e-name"), type: v("e-type"), title: v("e-title"),
-      status: v("e-status"), folder: v("e-folder"), exePath: v("e-exe"),
-      downloadUrl: v("e-url"), description: v("e-desc")
-    };
-    try {
-      const r = await fetch(BASE_URL + "/admin/clients/" + id, {
-        method: "PUT", headers: { "x-admin-key": KEY, "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      showStatus("edit-status", "Сохранено!", "ok");
-      await loadClients();
-      setTimeout(closeModal, 700);
-    } catch (e) {
-      showStatus("edit-status", "Ошибка: " + e.message, "err");
-    }
-  }
-
-  async function deleteClient(id) {
-    if (!confirm("Удалить клиент #" + id + "?")) return;
-    try {
-      const r = await fetch(BASE_URL + "/admin/clients/" + id, {
-        method: "DELETE", headers: { "x-admin-key": KEY }
-      });
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      await loadClients();
-    } catch (e) {
-      showStatus("list-status", "Ошибка: " + e.message, "err");
-    }
-  }
-
-  function copyUrl(el) {
-    navigator.clipboard.writeText(el.textContent).then(() => {
-      const orig = el.textContent;
-      el.textContent = "✓ Скопировано!";
-      setTimeout(() => el.textContent = orig, 1500);
-    });
-  }
-
-  function clearForm() {
-    ["f-name","f-type","f-title","f-status","f-folder","f-exe","f-url","f-desc"].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = "";
-    });
-    document.getElementById("add-status").innerHTML = "";
-  }
-
-  function showStatus(id, msg, type) {
-    document.getElementById(id).innerHTML = `<div class="status-bar ${type}">${esc(msg)}</div>`;
-  }
-
-  function v(id) { return (document.getElementById(id)?.value || "").trim(); }
-  function sv(id, val) { const el = document.getElementById(id); if (el) el.value = val ?? ""; }
-  function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-
-  document.getElementById("edit-modal").addEventListener("click", e => {
-    if (e.target === document.getElementById("edit-modal")) closeModal();
-  });
+// ─── UTILS ────────────────────────────────────────────────────────────────
+function copyUrl(el){navigator.clipboard.writeText(el.textContent).then(()=>{const o=el.textContent;el.textContent='✓ Скопировано!';setTimeout(()=>el.textContent=o,1500);});}
+function showStatus(id,msg,type){const el=document.getElementById(id);el.textContent=msg;el.className='status-bar show '+type;}
+function v(id){return(document.getElementById(id)?.value||'').trim();}
+function sv(id,val){const el=document.getElementById(id);if(el)el.value=val??'';}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+document.getElementById('edit-modal').addEventListener('click',e=>{if(e.target===document.getElementById('edit-modal'))closeModal();});
+document.getElementById('confirm-dialog').addEventListener('click',e=>{if(e.target===document.getElementById('confirm-dialog'))closeConfirm();});
 </script>
 </body>
 </html>
