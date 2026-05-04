@@ -126,8 +126,16 @@ app.post("/api/login", (req, res) => {
   if (username && password) {
     const clean = username.trim();
     const passwordHash = createHash("sha256").update(password).digest("hex");
-    const user = users.find(u => u.username.toLowerCase() === clean.toLowerCase() && u.passwordHash === passwordHash);
-    if (!user) return res.status(401).json({ error: "invalid credentials" });
+    const idx = users.findIndex(u => u.username.toLowerCase() === clean.toLowerCase());
+    if (idx === -1) return res.status(401).json({ error: "invalid credentials" });
+    const user = users[idx];
+    // Migration: old account without passwordHash — accept any password and save it
+    if (!user.passwordHash) {
+      users[idx].passwordHash = passwordHash;
+      saveUsers(users);
+    } else if (user.passwordHash !== passwordHash) {
+      return res.status(401).json({ error: "invalid credentials" });
+    }
     return res.json({ uuid: user.uuid, username: user.username, token: user.token, prefix: user.prefix || "" });
   }
   return res.status(400).json({ error: "provide username+password or uuid+token" });
