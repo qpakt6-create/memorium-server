@@ -92,8 +92,11 @@ app.delete("/admin/clients/:id", auth, (req, res) => {
 });
 
 app.post("/api/register", (req, res) => {
-  const { username } = req.body;
+  const { username, password } = req.body;
   if (!username || typeof username !== "string") return res.status(400).json({ error: "username required" });
+  if (!password || typeof password !== "string" || password.length < 6) {
+    return res.status(400).json({ error: "password must be at least 6 characters" });
+  }
   const clean = username.trim();
   if (clean.length < 3 || clean.length > 16 || !/^[a-zA-Z0-9_]+$/.test(clean)) {
     return res.status(400).json({ error: "invalid username (3-16 chars, a-z 0-9 _)" });
@@ -101,21 +104,33 @@ app.post("/api/register", (req, res) => {
   const users = loadUsers();
   const uuid = makeOfflineUUID(clean);
   const exists = users.find(u => u.uuid === uuid);
-  if (exists) return res.status(409).json({ error: "already_registered", uuid: exists.uuid, token: exists.token, username: exists.username });
+  if (exists) return res.status(409).json({ error: "already_registered", uuid: exists.uuid, username: exists.username });
   const token = randomBytes(32).toString("hex");
-  const user = { uuid, username: clean, token, prefix: "" };
+  const passwordHash = createHash("sha256").update(password).digest("hex");
+  const user = { uuid, username: clean, token, passwordHash, prefix: "" };
   users.push(user);
   saveUsers(users);
   res.status(201).json({ uuid, username: clean, token });
 });
 
 app.post("/api/login", (req, res) => {
-  const { uuid, token } = req.body;
-  if (!uuid || !token) return res.status(400).json({ error: "uuid and token required" });
+  const { uuid, token, username, password } = req.body;
   const users = loadUsers();
-  const user = users.find(u => u.uuid === uuid && u.token === token);
-  if (!user) return res.status(401).json({ error: "invalid credentials" });
-  res.json({ uuid: user.uuid, username: user.username, token: user.token, prefix: user.prefix || "" });
+  // Token-based login (auto-login from saved session)
+  if (uuid && token && !password) {
+    const user = users.find(u => u.uuid === uuid && u.token === token);
+    if (!user) return res.status(401).json({ error: "invalid credentials" });
+    return res.json({ uuid: user.uuid, username: user.username, token: user.token, prefix: user.prefix || "" });
+  }
+  // Username + password login
+  if (username && password) {
+    const clean = username.trim();
+    const passwordHash = createHash("sha256").update(password).digest("hex");
+    const user = users.find(u => u.username.toLowerCase() === clean.toLowerCase() && u.passwordHash === passwordHash);
+    if (!user) return res.status(401).json({ error: "invalid credentials" });
+    return res.json({ uuid: user.uuid, username: user.username, token: user.token, prefix: user.prefix || "" });
+  }
+  return res.status(400).json({ error: "provide username+password or uuid+token" });
 });
 
 app.post("/api/heartbeat", (req, res) => {
