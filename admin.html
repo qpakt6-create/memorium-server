@@ -175,6 +175,18 @@
       .login-box{padding:36px 24px} .server-badge{display:none}
       .tabs{flex-direction:column}
     }
+
+    .user-item { background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:16px;transition:border-color .2s;animation:itemIn .3s ease both; }
+    .user-item:hover { border-color:var(--border2); }
+    .user-avatar { width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;flex-shrink:0; }
+    .user-info { flex:1;min-width:0; }
+    .user-name { font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px; }
+    .user-uuid { font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+    .prefix-badge { font-size:11px;font-family:'Space Mono',monospace;padding:2px 10px;border-radius:6px;background:rgba(123,95,255,.15);color:var(--accent2);border:1px solid rgba(123,95,255,.25); }
+    .prefix-input-row { display:flex;gap:8px;align-items:center;margin-top:8px; }
+    .prefix-input { background:var(--bg4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-family:'Space Mono',monospace;padding:7px 12px;outline:none;transition:border-color .2s;width:180px; }
+    .prefix-input:focus { border-color:var(--accent); }
+    .online-dot { width:6px;height:6px;border-radius:50%;background:var(--success);box-shadow:0 0 6px var(--success);display:inline-block;flex-shrink:0; }
   </style>
 </head>
 <body>
@@ -324,6 +336,21 @@
       <div class="status-bar" id="list-status"></div>
     </div>
 
+
+    <!-- Пользователи и префиксы -->
+    <div class="card" id="users-card" style="display:none">
+      <div class="clients-header">
+        <div class="section-head" style="margin-bottom:0;flex:1"><h2>Пользователи и префиксы</h2><div class="section-line"></div></div>
+        <span class="client-count" id="users-count">0</span>
+        <button class="ghost" style="margin-left:12px;font-size:12px;padding:7px 14px" onclick="loadUsers()">↻ Обновить</button>
+      </div>
+      <div style="margin:16px 0;display:flex;gap:8px;flex-wrap:wrap">
+        <input type="text" id="user-search" placeholder="Поиск по нику или UUID..." style="flex:1;min-width:200px" oninput="filterUsers()" />
+      </div>
+      <div class="clients-list" id="users-list"><div class="empty">Подключитесь к серверу</div></div>
+      <div class="status-bar" id="users-status"></div>
+    </div>
+
   </main>
 </div>
 
@@ -410,9 +437,10 @@ async function connect() {
     localStorage.setItem('mem_url',BASE_URL); localStorage.setItem('mem_key',KEY);
     document.getElementById('public-url').textContent = BASE_URL+'/clients.json';
     document.getElementById('server-badge').textContent = BASE_URL.replace('https://','');
-    ['status-card','manage-card','list-card'].forEach(id=>document.getElementById(id).style.display='');
+    ['status-card','manage-card','list-card','users-card'].forEach(id=>document.getElementById(id).style.display='');
     showStatus('connect-status','✓ Подключено успешно','ok');
     renderClients(data); populateUpdateSelect(data);
+    loadUsers();
   } catch(e) { showStatus('connect-status','✕ '+e.message,'err'); }
 }
 
@@ -620,6 +648,84 @@ function copyUrl(el){navigator.clipboard.writeText(el.textContent).then(()=>{con
 function showStatus(id,msg,type){const el=document.getElementById(id);el.textContent=msg;el.className='status-bar show '+type;}
 function v(id){return(document.getElementById(id)?.value||'').trim();}
 function sv(id,val){const el=document.getElementById(id);if(el)el.value=val??'';}
+
+// ─── USERS ────────────────────────────────────────────────────────────────
+let allUsers = [], onlineUuids = new Set();
+
+async function loadUsers() {
+  try {
+    const [ur, or] = await Promise.all([
+      fetch(BASE_URL+'/admin/users',{headers:{'x-admin-key':KEY}}),
+      fetch(BASE_URL+'/api/players')
+    ]);
+    if(!ur.ok) throw new Error('HTTP '+ur.status);
+    allUsers = await ur.json();
+    const op = await or.json();
+    onlineUuids = new Set(op.uuids||[]);
+    document.getElementById('users-count').textContent = allUsers.length;
+    renderUsers(allUsers);
+  } catch(e) { showStatus('users-status','✕ '+e.message,'err'); }
+}
+
+function filterUsers() {
+  const q = document.getElementById('user-search').value.toLowerCase();
+  const filtered = allUsers.filter(u =>
+    u.username.toLowerCase().includes(q) || u.uuid.toLowerCase().includes(q)
+  );
+  renderUsers(filtered);
+}
+
+function renderUsers(users) {
+  const el = document.getElementById('users-list');
+  if(!users.length){el.innerHTML='<div class="empty">// нет пользователей</div>';return;}
+  el.innerHTML = users.map((u,i)=>{
+    const online = onlineUuids.has(u.uuid);
+    const avatar = (u.username||'?')[0].toUpperCase();
+    return `<div class="user-item" style="animation-delay:${i*.03}s">
+      <div class="user-avatar">${esc(avatar)}</div>
+      <div class="user-info">
+        <div class="user-name">
+          ${online?'<span class="online-dot"></span>':''}
+          ${esc(u.username)}
+          ${u.prefix?`<span class="prefix-badge">${esc(u.prefix)}</span>`:''}
+        </div>
+        <div class="user-uuid">${esc(u.uuid)}</div>
+        <div class="prefix-input-row">
+          <input class="prefix-input" type="text" id="pfx-${esc(u.uuid)}" value="${esc(u.prefix||'')}" placeholder="[VIP] или пусто" />
+          <button onclick="setPrefix('${esc(u.uuid)}')" style="font-size:12px;padding:7px 14px">Выдать</button>
+          <button class="ghost" onclick="setPrefix('${esc(u.uuid)}','remove')" style="font-size:12px;padding:7px 14px">Убрать</button>
+          <button class="danger" onclick="deleteUser('${esc(u.uuid)}','${esc(u.username)}')" style="font-size:12px;padding:7px 14px">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function setPrefix(uuid, mode) {
+  const prefix = mode === 'remove' ? '' : (document.getElementById('pfx-'+uuid)?.value||'').trim();
+  try {
+    const r = await fetch(BASE_URL+'/admin/prefix',{
+      method:'POST',
+      headers:{'x-admin-key':KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({key:KEY,uuid,prefix})
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    showStatus('users-status',`✓ Префикс ${mode==='remove'?'убран':'обновлён'} для ${uuid.slice(0,8)}...`,'ok');
+    await loadUsers();
+  } catch(e){showStatus('users-status','✕ '+e.message,'err');}
+}
+
+async function deleteUser(uuid, username) {
+  if(!confirm(`Удалить пользователя ${username}?`)) return;
+  try {
+    const r = await fetch(BASE_URL+'/admin/users/'+uuid,{method:'DELETE',headers:{'x-admin-key':KEY}});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    showStatus('users-status','✓ Пользователь удалён','ok');
+    await loadUsers();
+  } catch(e){showStatus('users-status','✕ '+e.message,'err');}
+}
+
+setInterval(()=>{ if(BASE_URL&&KEY) loadUsers(); }, 30000);
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 document.getElementById('edit-modal').addEventListener('click',e=>{if(e.target===document.getElementById('edit-modal'))closeModal();});
 document.getElementById('confirm-dialog').addEventListener('click',e=>{if(e.target===document.getElementById('confirm-dialog'))closeConfirm();});
